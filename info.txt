@@ -1,0 +1,11 @@
+id1: 324207885
+name1: Yael Parzelina
+hebrew name: יעל פרצלינה
+username1: Parzelina
+uni mail: parzelina@mail.tau.ac.il
+
+id2: 322643297
+name2: Mika Oren
+hebrew name: מיקה אורן
+username2: Mikaoren
+uni mail: Mikaoren@mail.tau.ac.il
