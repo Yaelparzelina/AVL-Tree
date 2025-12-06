@@ -96,7 +96,7 @@ class AVLTree(object):
 	def finger_search(self, key):
 		#empty tree case
 		if self.max_node is None or not self.max_node.is_real_node():
-			return (None, 1)
+			return None, 1
 
 		finger = self.max_node
 		edges = 1
@@ -111,7 +111,7 @@ class AVLTree(object):
 			edges += 1
 
 			if key == finger.key:
-				return (finger, edges)
+				return finger, edges
 
 			elif key < finger.key:
 				finger = finger.left
@@ -137,41 +137,45 @@ class AVLTree(object):
 	def insert(self, key, val):
 		new_node = AVLNode(key, val)
 		new_node.height = 0
+		new_node.left = self.virtual_node
+		new_node.right = self.virtual_node
+		new_node.parent = self.virtual_node
 		
 		parent = None
 		current = self.root
 		edges = 0
 		height_changes = 0
 
-		while current is not None and current.is_real_node():
-			parent = current
-			edges += 1
-			if key < current.key:
-				current = current.left
-			else:
-				current = current.right
-		
-		new_node.parent = parent
-		new_node.left = self.virtual_node
-		new_node.right = self.virtual_node
-		self.size += 1
-
-		
 		if parent is None or not self.root.is_real_node(): # Tree was empty
 			self.root = new_node
 			self.max_node = self.root
-		
-		elif key < parent.key:
-			parent.left = new_node
+			new_node.parent = self.virtual_node
 
 		else:
-			parent.right = new_node			
-			#update max_node if needed
-			if new_node.key > self.max_node.key:
-				self.max_node = new_node
+			while current is not None and current.is_real_node():
+				parent = current
+				edges += 1
+				# Binary search to find place to insert
+				if key < current.key:
+					current = current.left
+				else:
+					current = current.right
+		
+			new_node.parent = parent
+			
+			if key < parent.key:
+				parent.left = new_node
+
+			else:
+				parent.right = new_node			
+				#update max_node if needed
+				if new_node.key > self.max_node.key:
+					self.max_node = new_node
+
+		self.size += 1
 
 		# Rebalance the tree
-		while parent is not None or not parent.is_real_node():
+		while parent is not None and parent.is_real_node():
 			bf = parent.BF()
 			if abs(bf) < 2:
 				# Update height if needed
@@ -187,77 +191,113 @@ class AVLTree(object):
 					break
 			else: #|bf| == 2
 				# Perform rotations
-				if bf == 2: # Left heavy
-					if key < parent.left.key: # Left-Left case
-						# Right rotation
-						new_root = parent.left
-						parent.left = new_root.right
-						if new_root.right is not None:
-							new_root.right.parent = parent
-						new_root.right = parent
-					else: # Left-Right case
-						# Left rotation on left child
-						left_child = parent.left
-						new_root = left_child.right
-						left_child.right = new_root.left
-						if new_root.left is not None:
-							new_root.left.parent = left_child
-						new_root.left = left_child
-						parent.left = new_root.right
-						if new_root.right is not None:
-							new_root.right.parent = parent
-						new_root.right = parent
-
-					# Update parents
-					new_root.parent = parent.parent
-					if parent.parent is None:
-						self.root = new_root
-					else:
-						if parent == parent.parent.left:
-							parent.parent.left = new_root
-						else:
-							parent.parent.right = new_root
-					parent.parent = new_root
-
-				else: # Right heavy
-					if key > parent.right.key: # Right-Right case
-						# Left rotation
-						new_root = parent.right
-						parent.right = new_root.left
-						if new_root.left is not None:
-							new_root.left.parent = parent
-						new_root.left = parent
-					else: # Right-Left case
-						# Right rotation on right child
-						right_child = parent.right
-						new_root = right_child.left
-						right_child.left = new_root.right
-						if new_root.right is not None:
-							new_root.right.parent = right_child
-						new_root.right = right_child
-						parent.right = new_root.left
-						if new_root.left is not None:
-							new_root.left.parent = parent
-						new_root.left = parent
-
-					# Update parents
-					new_root.parent = parent.parent
-					if parent.parent is None:
-						self.root = new_root
-					else:
-						if parent == parent.parent.left:
-							parent.parent.left = new_root
-						else:
-							parent.parent.right = new_root
-					parent.parent = new_root
-
-				# Update heights after rotation
-				left_height = parent.left.height if parent.left is not None else -1
-				right_height = parent.right.height if parent.right is not None else -1
-				parent.height = 1 + max(left_height, right_height)
+				height_changes += self.rotate(parent, bf, height_changes)
+				break
 
 		return new_node, edges, height_changes
 		
+	"""performs a rotation on node depending on its balance factor
+	"""
+	def rotate(self, node, bf, height_changes = 0):  # node's |balance factor| would be 2  
+		new_root = None
+        # keep references to children that may need explicit height updates
+		left_child = None
+		right_child = None
+	
+		if bf == 2: # Left heavy
+			if node.left.BF() >= 0:
+				# Right rotation
+				new_root = node.left
+				node.left = new_root.right
+				if new_root.right is not None and new_root.right.is_real_node():
+					new_root.right.parent = node
+				new_root.right = node
+
+			else: # Left-Right case
+				# Left rotation then right rotation
+				left_child = node.left
+				new_root = left_child.right
+				left_child.right = new_root.left
+				if new_root.left is not None and new_root.left.is_real_node():
+					new_root.left.parent = left_child
+				node.left = new_root.right
+				if new_root.right is not None and new_root.right.is_real_node():
+					new_root.right.parent = node
+				new_root.right = node
+				new_root.left = left_child
+				left_child.parent = new_root
+		
+		elif bf == -2: # Right heavy
+			if node.right.BF() <= 0:
+				# Left rotation
+				new_root = node.right
+				node.right = new_root.left
+				if new_root.left is not None and new_root.left.is_real_node():
+					new_root.left.parent = node
+				new_root.left = node
+
+			else: # Right-Left case
+				# Right rotation then left rotation
+				right_child = node.right
+				new_root = right_child.left
+				right_child.left = new_root.right
+				if new_root.right is not None and new_root.right.is_real_node():
+					new_root.right.parent = right_child
+				node.right = new_root.left
+				if new_root.left is not None and new_root.left.is_real_node():
+					new_root.left.parent = node
+				new_root.left = node
+				new_root.right = right_child
+				right_child.parent = new_root
+		
+		# Update parents
+		new_root.parent = node.parent
+		if not node.parent.is_real_node(): #node is root
+			self.root = new_root
+		else:
+			if node == node.parent.left:
+				node.parent.left = new_root
+			else:
+				node.parent.right = new_root
+		node.parent = new_root
+
+		# update heights for directly affected nodes
+        # LR: left_child changed -> update left_child first
+		if left_child is not None:
+			old_LC_height = left_child.height
+			left_child.height = 1 + max(left_child.left.height, left_child.right.height)
+			if left_child.height != old_LC_height:
+				height_changes += 1
+        # RL: right_child changed -> update right_child first
+		if right_child is not None:
+			old_RC_height = right_child.height
+			right_child.height = 1 + max(right_child.left.height ,right_child.right.height)
+			if right_child.height != old_RC_height:
+				height_changes += 1
+        # node was moved down -> update it
+		old_node_height = node.height
+		node.height = 1 + max(node.left.height, node.right.height)
+		if node.height != old_node_height:
+			height_changes += 1
+    	# then new_root
+		old_new_root_height = new_root.height
+		new_root.height = 1 + max(new_root.left.height, new_root.right.height)
+		if new_root.height != old_new_root_height:
+			height_changes += 1
+		
+        # propagate up until no change
+		p = new_root.parent
+		while p is not None and p.is_real_node():
+			old_h = p.height
+			p.height = 1 + max(p.left.height, p.right.height)
+			if p.height != old_h:
+				height_changes += 1
+			else:
+				break
+			p = p.parent
+
+		return height_changes
+	
 
 	"""inserts a new node into the dictionary with corresponding key and value, starting at the max
 
