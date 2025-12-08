@@ -595,7 +595,45 @@ class AVLTree(object):
 	useing join() may help in the implementation
 	"""
 	def split(self, node):
+		left_tree = AVLTree()
+		right_tree = AVLTree()
 		
+		# left subtree of node
+		if node.left is not None and node.left.is_real_node():
+			left_tree.root = node.left
+			node.left.parent = left_tree.virtual_node
+			left_tree._size = self._count_nodes(node.left)
+			left_tree.update_max()
+		# right subtree of node
+		if node.right is not None and node.right.is_real_node():
+			right_tree.root = node.right
+			node.right.parent = right_tree.virtual_node
+			right_tree._size = self._count_nodes(node.right)
+			right_tree.update_max()
+		# go up the tree from node to root
+		current = node.parent
+		prev = node
+		while current is not None and current.is_real_node():
+			if prev == current.left:
+				# prev was left child -> current and its right subtree go to right_tree
+				temp_tree = AVLTree()
+				temp_tree.root = current.right
+				if current.right.is_real_node():
+					current.right.parent = temp_tree.virtual_node
+				temp_tree._size = self._count_nodes(current.right)
+				temp_tree.update_max()
+				right_tree.join(temp_tree, current.key, current.value)
+			else:
+				# prev was right child -> current and its left subtree go to left_tree
+				temp_tree = AVLTree()
+				temp_tree.root = current.left
+				if current.left.is_real_node():
+					current.left.parent = temp_tree.virtual_node
+				temp_tree._size = self._count_nodes(current.left)
+				temp_tree.update_max()
+				left_tree.join(temp_tree, current.key, current.value)
+			prev = current
+			current = current.parent
 		
 		return None, None
 
@@ -616,8 +654,17 @@ class AVLTree(object):
 	@returns: a sorted list according to key of touples (key, value) representing the data structure
 	"""
 	def avl_to_array(self):
-		return None
+		result = []
 
+		def in_order(node):
+			if node is None or not node.is_real_node():
+				return []
+			in_order(node.left)
+			result.append((node.key, node.value))
+			in_order(node.right)
+		
+		in_order(self.root)
+		return result
 
 	"""returns the node with the maximal key in the dictionary
 
