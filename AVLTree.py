@@ -109,7 +109,7 @@ class AVLTree(object):
 			edges += 1
 
     	# going down the tree to find the key
-		while finger is not None and finger.parent.is_real_node():
+		while finger is not None and finger.is_real_node():
 			edges += 1
 
 			if key == finger.key:
@@ -154,6 +154,8 @@ class AVLTree(object):
 			new_node.parent = self.virtual_node
 
 		else:
+			edges += 1
+			# Binary search to find place to insert
 			while current is not None and current.is_real_node():
 				parent = current
 				edges += 1
@@ -309,6 +311,7 @@ class AVLTree(object):
 			self._max_node = self.root
 			new_node.parent = self.virtual_node
 		else:
+			edges += 1
 			# going up the tree until we find a node with key <= insert key
 			while current.parent is not None and current.parent.is_real_node() and key < current.key:
 				current = current.parent
@@ -658,7 +661,7 @@ class AVLTree(object):
 
 		def in_order(node):
 			if node is None or not node.is_real_node():
-				return []
+				return
 			in_order(node.left)
 			result.append((node.key, node.value))
 			in_order(node.right)
