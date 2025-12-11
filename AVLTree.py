@@ -599,19 +599,29 @@ class AVLTree(object):
 		left_tree = AVLTree()
 		right_tree = AVLTree()
 		
+		# NEW- helper function to calculate height of a node- maybe add it to other funcs
+		def calculate_height(node):
+			if node is None or not node.is_real_node():
+				return -1 
+			left_height = node.left.height if node.left.is_real_node() else -1
+			right_height = node.right.height if node.right.is_real_node() else -1
+			return 1 + max(left_height, right_height)
+
 		# left subtree of node
 		if node.left is not None and node.left.is_real_node():
 			left_tree.root = node.left
 			node.left = self.virtual_node
 			left_tree.root.parent = left_tree.virtual_node
 			left_tree.update_max()
+
 		# right subtree of node
 		if node.right is not None and node.right.is_real_node():
 			right_tree.root = node.right
 			node.right = self.virtual_node
 			right_tree.root.parent = right_tree.virtual_node
 			right_tree.update_max()
-		
+
+		node.height = 0   # NEW- node is now a leaf
 		# go up the tree from node to root
 		current = node.parent
 		prev = node
@@ -624,6 +634,7 @@ class AVLTree(object):
 					current.right.parent = temp_tree.virtual_node
 				current.right = self.virtual_node
 				temp_tree.update_max()
+				current.height = calculate_height(current)  # NEW- update height of current
 				right_tree.join(temp_tree, current.key, current.value)
 			else:
 				# prev was right child -> current and its left subtree go to left_tree
@@ -633,6 +644,7 @@ class AVLTree(object):
 					current.left.parent = temp_tree.virtual_node
 				current.left = self.virtual_node
 				temp_tree.update_max()
+				current.height = calculate_height(current)  # NEW- update height of current
 				left_tree.join(temp_tree, current.key, current.value)
 			
 			
