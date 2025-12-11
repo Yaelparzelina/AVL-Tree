@@ -154,7 +154,6 @@ class AVLTree(object):
 			new_node.parent = self.virtual_node
 
 		else:
-			edges += 1
 			# Binary search to find place to insert
 			while current is not None and current.is_real_node():
 				parent = current
@@ -311,7 +310,6 @@ class AVLTree(object):
 			self._max_node = self.root
 			new_node.parent = self.virtual_node
 		else:
-			edges += 1
 			# going up the tree until we find a node with key <= insert key
 			while current.parent is not None and current.parent.is_real_node() and key < current.key:
 				current = current.parent
@@ -595,7 +593,7 @@ class AVLTree(object):
 	@returns: a tuple (left, right), where left is an AVLTree representing the keys in the 
 	dictionary smaller than node.key, and right is an AVLTree representing the keys in the 
 	dictionary larger than node.key.
-	useing join() may help in the implementation
+	no need to set the sizes of the trees
 	"""
 	def split(self, node):
 		left_tree = AVLTree()
@@ -604,15 +602,16 @@ class AVLTree(object):
 		# left subtree of node
 		if node.left is not None and node.left.is_real_node():
 			left_tree.root = node.left
-			node.left.parent = left_tree.virtual_node
-			left_tree._size = self._count_nodes(node.left)
+			node.left = self.virtual_node
+			left_tree.root.parent = left_tree.virtual_node
 			left_tree.update_max()
 		# right subtree of node
 		if node.right is not None and node.right.is_real_node():
 			right_tree.root = node.right
-			node.right.parent = right_tree.virtual_node
-			right_tree._size = self._count_nodes(node.right)
+			node.right = self.virtual_node
+			right_tree.root.parent = right_tree.virtual_node
 			right_tree.update_max()
+		
 		# go up the tree from node to root
 		current = node.parent
 		prev = node
@@ -623,7 +622,7 @@ class AVLTree(object):
 				temp_tree.root = current.right
 				if current.right.is_real_node():
 					current.right.parent = temp_tree.virtual_node
-				temp_tree._size = self._count_nodes(current.right)
+				current.right = self.virtual_node
 				temp_tree.update_max()
 				right_tree.join(temp_tree, current.key, current.value)
 			else:
@@ -632,24 +631,15 @@ class AVLTree(object):
 				temp_tree.root = current.left
 				if current.left.is_real_node():
 					current.left.parent = temp_tree.virtual_node
-				temp_tree._size = self._count_nodes(current.left)
+				current.left = self.virtual_node
 				temp_tree.update_max()
 				left_tree.join(temp_tree, current.key, current.value)
+			
+			
 			prev = current
 			current = current.parent
 		
-		return None, None
-
-	"""helper function to count nodes in a subtree
-	@type node: AVLNode
-	@param node: root of the subtree
-	@rtype: int
-	@returns: number of real nodes in the subtree rooted at node
-	"""
-	def _count_nodes(self, node):
-		if node is None or not node.is_real_node():
-			return 0
-		return 1 + self._count_nodes(node.left) + self._count_nodes(node.right)
+		return left_tree, right_tree
 
 	"""returns an array representing dictionary 
 
