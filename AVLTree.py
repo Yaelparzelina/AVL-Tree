@@ -64,10 +64,6 @@ class AVLTree(object):
 		self._size = 0
 		self._max_node = self.virtual_node  # virtual max_node
 
-		self.virtual_node.left = self.virtual_node
-		self.virtual_node.right = self.virtual_node
-		self.virtual_node.parent = self.virtual_node
-
 
 	"""searches for a node in the dictionary corresponding to the key (starting at the root)
         
@@ -660,70 +656,73 @@ class AVLTree(object):
 		left_tree = AVLTree()
 		right_tree = AVLTree()
 		
+		# special case: split at max
+		if node == self._max_node:
+			if self.root.is_real_node():
+				left_tree.root = self.root
+				left_tree.root.parent = left_tree.virtual_node
+				left_tree.delete(node)
+				left_tree.update_max()
+			return left_tree, AVLTree()
+
 		# left subtree of node
 		if node.left is not None and node.left.is_real_node():
 			left_tree.root = node.left
-			node.left = self.virtual_node
+			# node.left = self.virtual_node
 			left_tree.root.parent = left_tree.virtual_node
 			left_tree.update_max()
 
 		# right subtree of node
 		if node.right is not None and node.right.is_real_node():
 			right_tree.root = node.right
-			node.right = self.virtual_node
+			# node.right = self.virtual_node
 			right_tree.root.parent = right_tree.virtual_node
 			right_tree.update_max()
 
-		node.height = 0   # node is now a leaf
+		# node.height = 0   # node is now a leaf
 		# go up the tree from node to root
 		current = node.parent
 		prev = node
 		while current is not None and current.is_real_node():	
-			original_parent = current.parent
-
-			# if original_parent is not None and original_parent.is_real_node():
-			# 	if current == original_parent.left:
-			# 		original_parent.left = self.virtual_node
-			# 	else:
-			# 		original_parent.right = self.virtual_node
-			# elif current == self.root:
-			# 	self.root = self.virtual_node
+			# original_parent = current.parent
 
 			if prev == current.left:
 				# prev was left child -> current and its right subtree go to right_tree
-				right_subtree = current.right
-				current.right = self.virtual_node
+				# right_subtree = current.right
+				# current.right = self.virtual_node
 
 				temp_tree = AVLTree()
-				if right_subtree is not None and right_subtree.is_real_node():
-					temp_tree.root = right_subtree
-					right_subtree.parent = temp_tree.virtual_node
+				
+				if current.right is not None and current.right.is_real_node():
+					temp_tree.root = current.right
+					temp_tree.root.parent = temp_tree.virtual_node
 					temp_tree.update_max()
 				
-				current.left = self.virtual_node
-				current.height = 0  # current is now a leaf
+				# current.left = self.virtual_node
+				# current.height = 0  # current is now a leaf
 				right_tree.join(temp_tree, current.key, current.value)
 			
 			else:
 				# prev was right child -> current and its left subtree go to left_tree
-				left_subtree = current.left
-				current.left = self.virtual_node
+				# left_subtree = current.left
+				# current.left = self.virtual_node
 
 				temp_tree = AVLTree()
-				if left_subtree is not None and left_subtree.is_real_node():
-					temp_tree.root = left_subtree
-					left_subtree.parent = temp_tree.virtual_node
+				if current.left is not None and current.left.is_real_node():
+					temp_tree.root = current.left
+					temp_tree.root.parent = temp_tree.virtual_node
 					temp_tree.update_max()
 				
-				current.right = self.virtual_node
-				current.height = 0  # current is now a leaf
-				left_tree.join(temp_tree, current.key, current.value)
+				# current.right = self.virtual_node
+				# current.height = 0  # current is now a leaf
+				temp_tree.join(left_tree, current.key, current.value)
+				left_tree = temp_tree
 			
 			prev = current
-			current = original_parent
+			current = current.parent
 		
-		if not self.root.is_real_node():
-			self._max_node = self.virtual_node
+		# if not self.root.is_real_node():
+		# 	self._max_node = self.virtual_node
 		
 		return left_tree, right_tree
 
