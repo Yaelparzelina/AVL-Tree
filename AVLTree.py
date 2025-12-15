@@ -499,6 +499,23 @@ class AVLTree(object):
 		h1 = self.root.height if self.root.is_real_node() else -1
 		h2 = tree2.root.height if tree2.root.is_real_node() else -1
 		
+		if self._size == 0 or tree2._size == 0:
+			if self._size == 0 and tree2._size == 0:
+				self.root = new_node
+				new_node.left = self.virtual_node
+				new_node.right = self.virtual_node
+				self._max_node = new_node
+				self._size = 1
+			elif self._size == 0:
+				tree2.insert(key, val)  # insert into tree2
+				self.root = tree2.root
+				self._max_node = tree2._max_node
+				self._size = tree2._size
+			else:  # tree2 is empty
+				self.insert(key, val)  # insert into self
+			tree2.root = tree2.virtual_node  # empty tree2
+			return
+
 		if self._max_node.key < key:  # self's keys are smaller than tree2's keys
 			if h1 == h2:
 				# heights are equal
