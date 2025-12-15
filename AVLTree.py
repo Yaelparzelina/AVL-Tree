@@ -174,10 +174,23 @@ class AVLTree(object):
 				#update max_node if needed
 				if new_node.key > self._max_node.key:
 					self._max_node = new_node
+			
+			# Rebalance the tree
+			height_changes += self.rebalance_tree(parent)
 
 		self._size += 1
-
+		return new_node, edges, height_changes
+	
+	"""rebalances the tree starting from parent node
+	@type parent: AVLNode
+	@pre: parent is a real pointer to a node in self
+	@rtype: int
+	@returns: number of height changes during rebalancing
+	@param parent: the node to start rebalancing from"""
+	
+	def rebalance_tree(self, parent):
 		# Rebalance the tree
+		height_changes = 0
 		while parent is not None and parent.is_real_node():
 			bf = parent.BF()
 			if abs(bf) < 2:
@@ -196,9 +209,9 @@ class AVLTree(object):
 				# Perform rotations
 				new_root = self.rotate(parent, bf)
 				parent = new_root.parent
+				
+		return height_changes
 
-		return new_node, edges, height_changes
-		
 	"""performs a rotation on node depending on its balance factor
 	"""
 	def rotate(self, node, bf):  # node's |balance factor| would be 2  
@@ -336,27 +349,10 @@ class AVLTree(object):
 				if new_node.key > self._max_node.key:
 					self._max_node = new_node
 
+			# Rebalance the tree
+			height_changes += self.rebalance_tree(parent)
+
 		self._size += 1
-
-		# Rebalance the tree
-		while parent is not None and parent.is_real_node():
-			bf = parent.BF()
-			if abs(bf) < 2:
-				# Update height if needed
-				old_height = parent.height
-				left_height = parent.left.height if parent.left is not None else -1
-				right_height = parent.right.height if parent.right is not None else -1
-				parent.height = 1 + max(left_height, right_height)
-
-				if parent.height != old_height:
-					height_changes += 1
-					parent = parent.parent
-				else:
-					break
-			else: #|bf| == 2 - will only happen once
-				# Perform rotations
-				new_root = self.rotate(parent, bf)
-				parent = new_root.parent
 
 		return new_node, edges, height_changes
 
@@ -441,23 +437,8 @@ class AVLTree(object):
 		self._size -= 1
 			
 		# Rebalance the tree
-		while parent_for_rebalance is not None and parent_for_rebalance.is_real_node():
-			bf = parent_for_rebalance.BF()
-			if abs(bf) < 2:
-				# Update height if needed
-				old_height = parent_for_rebalance.height
-				left_height = parent_for_rebalance.left.height if parent_for_rebalance.left is not None else -1
-				right_height = parent_for_rebalance.right.height if parent_for_rebalance.right is not None else -1
-				parent_for_rebalance.height = 1 + max(left_height, right_height)
+		self.rebalance_tree(parent_for_rebalance)
 
-				if parent_for_rebalance.height != old_height:
-					parent_for_rebalance = parent_for_rebalance.parent
-				else:
-					break
-			else: #|bf| == 2 - can happen multiple times
-				# Perform rotations
-				new_root = self.rotate(parent_for_rebalance, bf)
-				parent_for_rebalance = new_root.parent
 		return None
 
 	""" finds the in-order successor of a given node
@@ -498,6 +479,7 @@ class AVLTree(object):
 		new_node = AVLNode(key, val)
 		h1 = self.root.height if self.root.is_real_node() else -1
 		h2 = tree2.root.height if tree2.root.is_real_node() else -1
+		parent_for_rebalance = self.virtual_node
 		
 		if self._size == 0 or tree2._size == 0:
 			if self._size == 0 and tree2._size == 0:
@@ -526,6 +508,7 @@ class AVLTree(object):
 				if tree2.root.is_real_node():
 					tree2.root.parent = new_node
 				self.root = new_node
+				parent_for_rebalance = new_node
 			
 			elif h1 > h2:
 				# self is taller
@@ -543,6 +526,7 @@ class AVLTree(object):
 				current.parent = new_node
 				if tree2.root.is_real_node():
 					tree2.root.parent = new_node
+				parent_for_rebalance = current.parent
 			
 			else:
 				# tree2 is taller
@@ -561,6 +545,7 @@ class AVLTree(object):
 				if self.root.is_real_node():
 					self.root.parent = new_node
 				self.root = tree2.root
+				parent_for_rebalance = current.parent
 
 			self._max_node = tree2._max_node
 			
@@ -574,6 +559,7 @@ class AVLTree(object):
 				if self.root.is_real_node():
 					self.root.parent = new_node
 				self.root = new_node
+				parent_for_rebalance = new_node
 			
 			elif h2 > h1:
 				# tree2 is taller
@@ -592,6 +578,7 @@ class AVLTree(object):
 				if self.root.is_real_node():
 					self.root.parent = new_node
 				self.root = tree2.root
+				parent_for_rebalance = current.parent
 			
 			else:
 				# self is taller
@@ -609,9 +596,14 @@ class AVLTree(object):
 				current.parent = new_node
 				if tree2.root.is_real_node():
 					tree2.root.parent = new_node
+				parent_for_rebalance = current.parent
 
 		tree2.root = tree2.virtual_node  # empty tree2		
 		self._size += tree2._size + 1
+
+		new_node.height = 1 + max(new_node.left.height, new_node.right.height)
+		# Rebalance the tree
+		self.rebalance_tree(parent_for_rebalance)
 		return
 
 
