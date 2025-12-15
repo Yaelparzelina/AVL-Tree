@@ -519,8 +519,12 @@ class AVLTree(object):
 				current = self.root
 				while current.height > h2:
 					current = current.right
-				# insert new_node here
+				
 				original_parent = current.parent
+				if original_parent is None:
+					original_parent = self.virtual_node
+				
+				# insert new_node here
 				new_node.parent = original_parent
 				if original_parent is None or not original_parent.is_real_node():
 					self.root = new_node
@@ -540,8 +544,12 @@ class AVLTree(object):
 				current = tree2.root
 				while current.height > h1:
 					current = current.left
-				# insert new_node here
+				
 				original_parent = current.parent
+				if original_parent is None:
+					original_parent = self.virtual_node
+				
+				# insert new_node here
 				new_node.parent = original_parent
 				if original_parent is None or not original_parent.is_real_node():
 					self.root = new_node
@@ -577,8 +585,12 @@ class AVLTree(object):
 				current = tree2.root
 				while current.height > h1:
 					current = current.right
-				# insert new_node here
+				
 				original_parent = current.parent
+				if original_parent is None:
+					original_parent = self.virtual_node
+				
+				# insert new_node here
 				new_node.parent = original_parent
 				if original_parent is None or not original_parent.is_real_node():
 					self.root = new_node
@@ -600,8 +612,11 @@ class AVLTree(object):
 				current = self.root
 				while current.height > h2:
 					current = current.left
-				# insert new_node here
+				
 				original_parent = current.parent
+				if original_parent is None:
+					original_parent = self.virtual_node
+				# insert new_node here
 				new_node.parent = original_parent
 				if original_parent is None or not original_parent.is_real_node():
 					self.root = new_node
