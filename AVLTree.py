@@ -64,6 +64,10 @@ class AVLTree(object):
 		self._size = 0
 		self._max_node = self.virtual_node  # virtual max_node
 
+		self.virtual_node.left = self.virtual_node
+		self.virtual_node.right = self.virtual_node
+		self.virtual_node.parent = self.virtual_node
+
 
 	"""searches for a node in the dictionary corresponding to the key (starting at the root)
         
@@ -675,7 +679,15 @@ class AVLTree(object):
 		current = node.parent
 		prev = node
 		while current is not None and current.is_real_node():	
-			next_parent = current.parent
+			original_parent = current.parent
+
+			# if original_parent is not None and original_parent.is_real_node():
+			# 	if current == original_parent.left:
+			# 		original_parent.left = self.virtual_node
+			# 	else:
+			# 		original_parent.right = self.virtual_node
+			# elif current == self.root:
+			# 	self.root = self.virtual_node
 
 			if prev == current.left:
 				# prev was left child -> current and its right subtree go to right_tree
@@ -691,6 +703,7 @@ class AVLTree(object):
 				current.left = self.virtual_node
 				current.height = 0  # current is now a leaf
 				right_tree.join(temp_tree, current.key, current.value)
+			
 			else:
 				# prev was right child -> current and its left subtree go to left_tree
 				left_subtree = current.left
@@ -707,7 +720,10 @@ class AVLTree(object):
 				left_tree.join(temp_tree, current.key, current.value)
 			
 			prev = current
-			current = next_parent
+			current = original_parent
+		
+		if not self.root.is_real_node():
+			self._max_node = self.virtual_node
 		
 		return left_tree, right_tree
 
