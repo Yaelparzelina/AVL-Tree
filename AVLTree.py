@@ -188,27 +188,27 @@ class AVLTree(object):
 	@returns: number of height changes during rebalancing
 	@param parent: the node to start rebalancing from"""
 	
-	def rebalance_tree(self, parent):
+	def rebalance_tree(self, node):
 		# Rebalance the tree
 		height_changes = 0
-		while parent is not None and parent.is_real_node():
-			bf = parent.BF()
+		while node is not None and node.is_real_node():
+			bf = node.BF()
 			if abs(bf) < 2:
 				# Update height if needed
-				old_height = parent.height
-				left_height = parent.left.height if parent.left is not None else -1
-				right_height = parent.right.height if parent.right is not None else -1
-				parent.height = 1 + max(left_height, right_height)
+				old_height = node.height
+				left_height = node.left.height if node.left is not None else -1
+				right_height = node.right.height if node.right is not None else -1
+				node.height = 1 + max(left_height, right_height)
 
-				if parent.height != old_height:
+				if node.height != old_height:
 					height_changes += 1
-					parent = parent.parent
+					node = node.parent
 				else:
 					break
 			else: #|bf| == 2 - will only happen once
 				# Perform rotations
-				new_root = self.rotate(parent, bf)
-				parent = new_root.parent
+				new_root = self.rotate(node, bf)
+				node = new_root.parent
 				
 		return height_changes
 
@@ -481,14 +481,16 @@ class AVLTree(object):
 		h2 = tree2.root.height if tree2.root.is_real_node() else -1
 		parent_for_rebalance = self.virtual_node
 		
-		if self._size == 0 or tree2._size == 0:
-			if self._size == 0 and tree2._size == 0:
+		self_empty = self.root is None or not self.root.is_real_node()
+		tree2_empty = tree2.root is None or not tree2.root.is_real_node()
+		if self_empty or tree2_empty:
+			if self_empty and tree2_empty:
 				self.root = new_node
 				new_node.left = self.virtual_node
 				new_node.right = self.virtual_node
 				self._max_node = new_node
 				self._size = 1
-			elif self._size == 0:
+			elif self_empty:
 				tree2.insert(key, val)  # insert into tree2
 				self.root = tree2.root
 				self._max_node = tree2._max_node
@@ -600,10 +602,11 @@ class AVLTree(object):
 					tree2.root.parent = new_node
 				parent_for_rebalance = current.parent
 
+		new_node.height = 1 + max(new_node.left.height, new_node.right.height)
+		
 		tree2.root = tree2.virtual_node  # empty tree2		
 		self._size += tree2._size + 1
-
-		new_node.height = 1 + max(new_node.left.height, new_node.right.height)
+		
 		# Rebalance the tree
 		self.rebalance_tree(parent_for_rebalance)
 		return
@@ -642,31 +645,39 @@ class AVLTree(object):
 		current = node.parent
 		prev = node
 		while current is not None and current.is_real_node():	
+			next_parent = current.parent
+
 			if prev == current.left:
 				# prev was left child -> current and its right subtree go to right_tree
-				current.left = self.virtual_node
-				temp_tree = AVLTree()
-				temp_tree.root = current.right
-				if current.right.is_real_node():
-					current.right.parent = temp_tree.virtual_node
+				right_subtree = current.right
 				current.right = self.virtual_node
-				temp_tree.update_max()
+
+				temp_tree = AVLTree()
+				if right_subtree is not None and right_subtree.is_real_node():
+					temp_tree.root = right_subtree
+					right_subtree.parent = temp_tree.virtual_node
+					temp_tree.update_max()
+				
+				current.left = self.virtual_node
 				current.height = 0  # current is now a leaf
 				right_tree.join(temp_tree, current.key, current.value)
 			else:
 				# prev was right child -> current and its left subtree go to left_tree
-				current.right = self.virtual_node
-				temp_tree = AVLTree()
-				temp_tree.root = current.left
-				if current.left.is_real_node():
-					current.left.parent = temp_tree.virtual_node
+				left_subtree = current.left
 				current.left = self.virtual_node
-				temp_tree.update_max()
+
+				temp_tree = AVLTree()
+				if left_subtree is not None and left_subtree.is_real_node():
+					temp_tree.root = left_subtree
+					left_subtree.parent = temp_tree.virtual_node
+					temp_tree.update_max()
+				
+				current.right = self.virtual_node
 				current.height = 0  # current is now a leaf
 				left_tree.join(temp_tree, current.key, current.value)
 			
 			prev = current
-			current = current.parent
+			current = next_parent
 		
 		return left_tree, right_tree
 
@@ -726,3 +737,4 @@ class AVLTree(object):
 	"""
 	def get_root(self):
 		return self.root if self._size > 0 else None
+	
