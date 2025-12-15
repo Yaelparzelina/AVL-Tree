@@ -382,7 +382,7 @@ class AVLTree(object):
 				# update max_node if needed
 				if node == self._max_node:
 					self.update_max()
-			parent = node.parent
+			parent_for_rebalance = node.parent
 			node.parent = self.virtual_node  # help garbage collection
 		
 		# Case 2: node has one child
@@ -401,15 +401,16 @@ class AVLTree(object):
 			# update max_node if needed
 			if node == self._max_node: #check for duplicates in other cases??? check w GPT that child is always new max!!!!!!!!!!!!!!!!!!
 				self._max_node = child if child.is_real_node() else self.virtual_node
-			parent = node.parent
+			parent_for_rebalance = node.parent
 			node.parent = self.virtual_node  # help garbage collection
 
 		# Case 3: node has two children
 		else:
 			succ = self.successor(node) # we know succ has at most one child (right)
-			# copy successor's data to node
-			node.key = succ.key
-			node.value = succ.value
+			parent_for_rebalance = succ.parent
+			if succ == node.right:
+				parent_for_rebalance = succ  # since succ will move to node's place
+
 			# delete successor
 			if succ.parent.left == succ:
 				succ.parent.left = succ.right
@@ -418,32 +419,45 @@ class AVLTree(object):
 			if succ.right.is_real_node():
 				succ.right.parent = succ.parent
 			
-			# update max_node if needed
-			if succ == self._max_node:
-				self._max_node = node
-			parent = succ.parent
-			succ.parent = self.virtual_node  # help garbage collection
+			#replace node with successor
+			succ.parent = node.parent
+			if node.parent is None or not node.parent.is_real_node(): # node is root
+				self.root = succ
+			else:
+				if node == node.parent.left:
+					node.parent.left = succ
+				else:
+					node.parent.right = succ
+			succ.left = node.left
+			succ.right = node.right
+			if node.left is not None and node.left.is_real_node():
+				node.left.parent = succ
+			if node.right is not None and node.right.is_real_node():
+				node.right.parent = succ
+			
+			succ.height = node.height  # successor takes node's height
+			node.parent = self.virtual_node  # help garbage collection
 		
 		self._size -= 1
 			
 		# Rebalance the tree
-		while parent is not None and parent.is_real_node():
-			bf = parent.BF()
+		while parent_for_rebalance is not None and parent_for_rebalance.is_real_node():
+			bf = parent_for_rebalance.BF()
 			if abs(bf) < 2:
 				# Update height if needed
-				old_height = parent.height
-				left_height = parent.left.height if parent.left is not None else -1
-				right_height = parent.right.height if parent.right is not None else -1
-				parent.height = 1 + max(left_height, right_height)
+				old_height = parent_for_rebalance.height
+				left_height = parent_for_rebalance.left.height if parent_for_rebalance.left is not None else -1
+				right_height = parent_for_rebalance.right.height if parent_for_rebalance.right is not None else -1
+				parent_for_rebalance.height = 1 + max(left_height, right_height)
 
-				if parent.height != old_height:
-					parent = parent.parent
+				if parent_for_rebalance.height != old_height:
+					parent_for_rebalance = parent_for_rebalance.parent
 				else:
 					break
 			else: #|bf| == 2 - can happen multiple times
 				# Perform rotations
-				new_root = self.rotate(parent, bf)
-				parent = new_root.parent
+				new_root = self.rotate(parent_for_rebalance, bf)
+				parent_for_rebalance = new_root.parent
 		return None
 
 	""" finds the in-order successor of a given node
@@ -593,7 +607,6 @@ class AVLTree(object):
 	@returns: a tuple (left, right), where left is an AVLTree representing the keys in the 
 	dictionary smaller than node.key, and right is an AVLTree representing the keys in the 
 	dictionary larger than node.key.
-	no need to set the sizes of the trees
 	"""
 	def split(self, node):
 		left_tree = AVLTree()
