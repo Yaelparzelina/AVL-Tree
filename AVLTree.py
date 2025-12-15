@@ -278,17 +278,19 @@ class AVLTree(object):
 		node.parent = new_root
 
 		# update heights for directly affected nodes
-        # LR: left_child changed -> update left_child first
+		get_h = lambda n: n.height if (n is not None and n.is_real_node()) else -1
+        
+		# LR: left_child changed -> update left_child first
 		if left_child is not None and left_child.is_real_node():
-			left_child.height = 1 + max(left_child.left.height, left_child.right.height)
+			left_child.height = 1 + max(get_h(left_child.left), get_h(left_child.right))
         # RL: right_child changed -> update right_child first
 		if right_child is not None and right_child.is_real_node():
-			right_child.height = 1 + max(right_child.left.height ,right_child.right.height)
+			right_child.height = 1 + max(get_h(right_child.left) ,get_h(right_child.right))
         # node was moved down -> update it
-		node.height = 1 + max(node.left.height, node.right.height)
+		node.height = 1 + max(get_h(node.left), get_h(node.right))
 
     	# then new_root
-		new_root.height = 1 + max(new_root.left.height, new_root.right.height)
+		new_root.height = 1 + max(get_h(new_root.left), get_h(new_root.right))
 
 		return new_root
 	
@@ -518,17 +520,20 @@ class AVLTree(object):
 				while current.height > h2:
 					current = current.right
 				# insert new_node here
-				new_node.parent = current.parent
-				if current.parent is None or not current.parent.is_real_node():
+				original_parent = current.parent
+				new_node.parent = original_parent
+				if original_parent is None or not original_parent.is_real_node():
 					self.root = new_node
 				else:
-					current.parent.right = new_node
+					original_parent.right = new_node
 				new_node.left = current
 				new_node.right = tree2.root
 				current.parent = new_node
 				if tree2.root.is_real_node():
 					tree2.root.parent = new_node
-				parent_for_rebalance = current.parent
+				parent_for_rebalance = original_parent
+				if not parent_for_rebalance.is_real_node():
+					parent_for_rebalance = new_node
 			
 			else:
 				# tree2 is taller
@@ -536,11 +541,12 @@ class AVLTree(object):
 				while current.height > h1:
 					current = current.left
 				# insert new_node here
-				new_node.parent = current.parent
-				if current.parent is None or not current.parent.is_real_node():
+				original_parent = current.parent
+				new_node.parent = original_parent
+				if original_parent is None or not original_parent.is_real_node():
 					self.root = new_node
 				else:
-					current.parent.left = new_node
+					original_parent.left = new_node
 				new_node.right = current
 				new_node.left = self.root
 				current.parent = new_node
@@ -548,7 +554,9 @@ class AVLTree(object):
 					self.root.parent = new_node
 				if current.parent is not None and current.parent.is_real_node():
 					self.root = tree2.root
-				parent_for_rebalance = current.parent
+				parent_for_rebalance = original_parent
+				if not parent_for_rebalance.is_real_node():
+					parent_for_rebalance = new_node
 
 			self._max_node = tree2._max_node
 			
@@ -570,11 +578,12 @@ class AVLTree(object):
 				while current.height > h1:
 					current = current.right
 				# insert new_node here
-				new_node.parent = current.parent
-				if current.parent is None or not current.parent.is_real_node():
+				original_parent = current.parent
+				new_node.parent = original_parent
+				if original_parent is None or not original_parent.is_real_node():
 					self.root = new_node
 				else:
-					current.parent.right = new_node
+					original_parent.right = new_node
 				new_node.left = current
 				new_node.right = self.root
 				current.parent = new_node
@@ -582,7 +591,9 @@ class AVLTree(object):
 					self.root.parent = new_node
 				if current.parent is not None and current.parent.is_real_node():
 					self.root = tree2.root
-				parent_for_rebalance = current.parent
+				parent_for_rebalance = original_parent
+				if not parent_for_rebalance.is_real_node():
+					parent_for_rebalance = new_node
 			
 			else:
 				# self is taller
@@ -590,19 +601,23 @@ class AVLTree(object):
 				while current.height > h2:
 					current = current.left
 				# insert new_node here
-				new_node.parent = current.parent
-				if current.parent is None or not current.parent.is_real_node():
+				original_parent = current.parent
+				new_node.parent = original_parent
+				if original_parent is None or not original_parent.is_real_node():
 					self.root = new_node
 				else:
-					current.parent.left = new_node
+					original_parent.left = new_node
 				new_node.right = current
 				new_node.left = tree2.root
 				current.parent = new_node
 				if tree2.root.is_real_node():
 					tree2.root.parent = new_node
-				parent_for_rebalance = current.parent
-
-		new_node.height = 1 + max(new_node.left.height, new_node.right.height)
+				parent_for_rebalance = original_parent
+				if not parent_for_rebalance.is_real_node():
+					parent_for_rebalance = new_node
+		
+		get_h = lambda n: n.height if (n is not None and n.is_real_node()) else -1
+		new_node.height = 1 + max(get_h(new_node.left), get_h(new_node.right))
 		
 		tree2.root = tree2.virtual_node  # empty tree2		
 		self._size += tree2._size + 1
@@ -705,7 +720,7 @@ class AVLTree(object):
 	@returns: the maximal node, None if the dictionary is empty
 	"""
 	def max_node(self):
-		return self._max_node if self._size > 0 else None
+		return None if (self.root is None or not self.root.is_real_node()) else self._max_node
 
 	"""updates the max_node field of the AVLTree
 	@rtype: None
