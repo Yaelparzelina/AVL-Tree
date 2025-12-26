@@ -278,7 +278,10 @@ class AVLTree(object):
 		node.parent = new_root
 
 		# update heights for directly affected nodes
-		get_h = lambda n: n.height if (n is not None and n.is_real_node()) else -1
+		def get_h(self, node):
+			if node is not None and node.is_real_node():
+				return node.height
+			return -1
         
 		# LR: left_child changed -> update left_child first
 		if left_child is not None and left_child.is_real_node():
@@ -631,7 +634,11 @@ class AVLTree(object):
 				if not parent_for_rebalance.is_real_node():
 					parent_for_rebalance = new_node
 		
-		get_h = lambda n: n.height if (n is not None and n.is_real_node()) else -1
+		
+		def get_h(self, node):
+			if node is not None and node.is_real_node():
+				return node.height
+			return -1
 		new_node.height = 1 + max(get_h(new_node.left), get_h(new_node.right))
 		
 		tree2.root = tree2.virtual_node  # empty tree2		
