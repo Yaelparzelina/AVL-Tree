@@ -278,7 +278,7 @@ class AVLTree(object):
 		node.parent = new_root
 
 		# update heights for directly affected nodes
-		def get_h(self, node):
+		def get_h(node):
 			if node is not None and node.is_real_node():
 				return node.height
 			return -1
@@ -635,7 +635,7 @@ class AVLTree(object):
 					parent_for_rebalance = new_node
 		
 		
-		def get_h(self, node):
+		def get_h(node):
 			if node is not None and node.is_real_node():
 				return node.height
 			return -1
